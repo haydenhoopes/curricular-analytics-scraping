@@ -10,6 +10,7 @@ import os
 class Scraper:
 
     def __init__(self, email, password, download_dir='tmp'):
+        pd.set_option('display.max_columns', None)
         self.url = "https://www.curricularanalytics.org"
         self.email = email
         self.password = password
@@ -80,8 +81,11 @@ class Scraper:
 
         self.logged_in == True
 
-    def go_to(self):
-        self.driver.get(self.url + self.link)
+    def go_to(self, link=None):
+        if link:
+            self.driver.get(self.url + link)
+        else:
+            self.driver.get(self.url + self.link)
     
     def show_public(self):
         self.driver.find_element(By.CLASS_NAME, "custom-control-label").click()
@@ -102,12 +106,15 @@ class Scraper:
         return int(soup.find("ul", class_="pagination").find_all("li")[-2].find("a").text)
 
     def open_new_link(self, link):
+        # Go back to original window
+        self.switch_to_tab(0)
+
         # Open a new window
         self.driver.execute_script("window.open('');")
     
         # Switch to the new window and open new URL
         self.driver.switch_to.window(self.driver.window_handles[-1])
-        self.driver.get(self.url + link)
+        self.go_to(link)
     
     def get_page_rows(self):
         self.driver.switch_to.window(self.driver.window_handles[0])
@@ -128,7 +135,7 @@ class Scraper:
         '''
         self.pause()
         for page in range(self.get_number_of_pages()-1):
-            print(f"Processing page {page+1}")
+            print(f"Processing page {page+1} of {self.get_number_of_pages()}")
             for arg in args:
                 if callable(arg):
                     arg()
@@ -147,6 +154,13 @@ class Scraper:
 
     def get_number_of_tabs(self):
         return len(self.driver.window_handles)
+
+    def close_tab_x(self, x):
+        self.switch_to_tab(x)
+        self.close()
+
+    def switch_to_tab(self, t):
+        self.driver.switch_to.window(self.driver.window_handles[t])
 
     def pause(self, pause=4):
         sleep(pause)
